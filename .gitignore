@@ -50,3 +50,5 @@ test-api.js
 
 # legacy duplicate app tree excluded from build
 /src/
+
+.vercel
