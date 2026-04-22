@@ -33,7 +33,7 @@ export default function InsightsPage() {
     setError('');
 
     try {
-      const res = await fetch(`/api/insights?startDate=${startDate}&endDate=${endDate}`);
+      const res = await fetch(`/api/insights?startDate=${startDate}&endDate=${endDate}`, { credentials: 'include' });
 
       if (!res.ok || !res.body) {
         const text = await res.text();
