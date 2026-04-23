@@ -345,7 +345,7 @@ export function parseSalesData(rows: any[], headers: any[] = []): SalesRecord[] 
         advanceDays: explicitAdvanceDays || calculatedAdvanceDays,
       };
     })
-    .filter((record) => record.value > 0 && record.seller && record.client);
+    .filter((record) => record.value !== 0 && record.seller && record.client);
 }
 
 export function filterSalesByStatus(sales: SalesRecord[], status: 'fechada' | 'aberta'): SalesRecord[] {
