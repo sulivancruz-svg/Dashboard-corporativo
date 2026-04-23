@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { filterSalesByDateRange, filterSalesByStatus, getGoogleSheetsData, parseSalesData } from '@/lib/google-sheets';
+import { filterSalesByDateRange, getGoogleSheetsData, parseSalesData } from '@/lib/google-sheets';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,15 +19,12 @@ export async function GET(req: NextRequest) {
       req.nextUrl.searchParams.get('startDate'),
       req.nextUrl.searchParams.get('endDate')
     );
-    const closedSales = filterSalesByStatus(allSales, 'fechada');
-    const sales = closedSales.length > 0 ? closedSales : allSales;
-
-    const customerProfiles = sales.reduce<Record<string, number>>((acc, sale) => {
+    const customerProfiles = allSales.reduce<Record<string, number>>((acc, sale) => {
       acc[sale.client] = (acc[sale.client] || 0) + 1;
       return acc;
     }, {});
 
-    const salesByDateMap = sales.reduce<Record<string, { sales: number; revenue: number }>>((acc, sale) => {
+    const salesByDateMap = allSales.reduce<Record<string, { sales: number; revenue: number }>>((acc, sale) => {
       const dateKey = sale.date.split('T')[0];
       if (!acc[dateKey]) {
         acc[dateKey] = { sales: 0, revenue: 0 };
@@ -38,14 +35,14 @@ export async function GET(req: NextRequest) {
     }, {});
 
     return NextResponse.json({
-      totalSales: sales.length,
+      totalSales: allSales.length,
       avgAdvanceDays:
-        sales.length > 0 ? Number((sales.reduce((sum, sale) => sum + sale.advanceDays, 0) / sales.length).toFixed(1)) : 0,
+        allSales.length > 0 ? Number((allSales.reduce((sum, sale) => sum + sale.advanceDays, 0) / allSales.length).toFixed(1)) : 0,
       bookingPatterns: [
-        { name: '0-7 dias', sales: sales.filter((sale) => sale.advanceDays >= 0 && sale.advanceDays <= 7).length },
-        { name: '8-14 dias', sales: sales.filter((sale) => sale.advanceDays >= 8 && sale.advanceDays <= 14).length },
-        { name: '15-30 dias', sales: sales.filter((sale) => sale.advanceDays >= 15 && sale.advanceDays <= 30).length },
-        { name: '30+ dias', sales: sales.filter((sale) => sale.advanceDays > 30).length },
+        { name: '0-7 dias', sales: allSales.filter((sale) => sale.advanceDays >= 0 && sale.advanceDays <= 7).length },
+        { name: '8-14 dias', sales: allSales.filter((sale) => sale.advanceDays >= 8 && sale.advanceDays <= 14).length },
+        { name: '15-30 dias', sales: allSales.filter((sale) => sale.advanceDays >= 15 && sale.advanceDays <= 30).length },
+        { name: '30+ dias', sales: allSales.filter((sale) => sale.advanceDays > 30).length },
       ],
       customerProfiles: [
         { name: 'Alta recorrência (10+)', clients: Object.values(customerProfiles).filter((count) => count >= 10).length },

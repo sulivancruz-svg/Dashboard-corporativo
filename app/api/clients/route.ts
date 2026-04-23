@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { filterSalesByDateRange, filterSalesByStatus, getGoogleSheetsData, parseSalesData } from '@/lib/google-sheets';
+import { filterSalesByDateRange, getGoogleSheetsData, parseSalesData } from '@/lib/google-sheets';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,11 +23,8 @@ export async function GET(req: NextRequest) {
       req.nextUrl.searchParams.get('startDate'),
       req.nextUrl.searchParams.get('endDate')
     );
-    const closedSales = filterSalesByStatus(allSales, 'fechada');
-    const sales = closedSales.length > 0 ? closedSales : allSales;
-
     // Group by client
-    const clientMap = sales.reduce((acc: Record<string, any>, sale) => {
+    const clientMap = allSales.reduce((acc: Record<string, any>, sale) => {
       if (!acc[sale.client]) {
         acc[sale.client] = {
           name: sale.client,
