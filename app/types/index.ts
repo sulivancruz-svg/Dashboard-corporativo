@@ -42,6 +42,8 @@ export interface OverviewData {
   totalProducts: number;
   avgTicket: number;
   growthRate: number;
+  openRevenue: number;
+  openSales: number;
   topSellerName: string;
   topSellerAmount: number;
   topClientName: string;

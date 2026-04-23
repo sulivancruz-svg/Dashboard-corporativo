@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGoogleSheetsData, parseSalesData, calculateMetrics, filterSalesByDateRange } from '@/lib/google-sheets';
+import { getGoogleSheetsData, parseSalesData, calculateMetrics, filterSalesByDateRange, filterSalesByStatus } from '@/lib/google-sheets';
 
 // Skip validation during build
 export const dynamic = 'force-dynamic';
@@ -41,8 +41,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Calculate metrics
-    const metrics = calculateMetrics(sales);
+    // Separate by status
+    const closedSales = filterSalesByStatus(sales, 'fechada');
+    const openSales = filterSalesByStatus(sales, 'aberta');
+    const openSalesData = {
+      revenue: openSales.reduce((sum, s) => sum + s.value, 0),
+      count: openSales.length,
+    };
+
+    const metrics = calculateMetrics(closedSales.length > 0 ? closedSales : sales, openSalesData);
 
     return NextResponse.json(metrics);
   } catch (error) {

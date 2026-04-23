@@ -22,6 +22,8 @@ export interface OverviewData {
   totalProducts: number;
   avgTicket: number;
   growthRate: number;
+  openRevenue: number;
+  openSales: number;
   topSellerName: string;
   topSellerAmount: number;
   topClientName: string;
@@ -346,6 +348,10 @@ export function parseSalesData(rows: any[], headers: any[] = []): SalesRecord[] 
     .filter((record) => record.value > 0 && record.seller && record.client);
 }
 
+export function filterSalesByStatus(sales: SalesRecord[], status: 'fechada' | 'aberta'): SalesRecord[] {
+  return sales.filter((s) => s.status.toLowerCase().trim() === status);
+}
+
 export function filterSalesByDateRange(sales: SalesRecord[], startDate?: string | null, endDate?: string | null) {
   const start = startDate ? parseSheetDate(startDate) : null;
   const end = endDate ? parseSheetDate(endDate) : null;
@@ -363,7 +369,7 @@ export function filterSalesByDateRange(sales: SalesRecord[], startDate?: string 
   });
 }
 
-export function calculateMetrics(sales: SalesRecord[]): OverviewData {
+export function calculateMetrics(sales: SalesRecord[], openSalesData?: { revenue: number; count: number }): OverviewData {
   const totalSales = sales.length;
   const totalRevenue = sales.reduce((sum, sale) => sum + sale.value, 0);
   const uniqueClients = new Set(sales.map((sale) => sale.client)).size;
@@ -426,6 +432,8 @@ export function calculateMetrics(sales: SalesRecord[]): OverviewData {
     totalProducts: uniqueProducts,
     avgTicket,
     growthRate: 12.5,
+    openRevenue: openSalesData ? Number(openSalesData.revenue.toFixed(2)) : 0,
+    openSales: openSalesData ? openSalesData.count : 0,
     topSellerName: topSellerEntry ? topSellerEntry[0] : 'N/A',
     topSellerAmount: topSellerEntry ? Number(topSellerEntry[1].toFixed(2)) : 0,
     topClientName: topClientEntry ? topClientEntry[0] : 'N/A',

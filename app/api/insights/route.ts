@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import {
   calculateMetrics,
   filterSalesByDateRange,
+  filterSalesByStatus,
   getGoogleSheetsData,
   parseSalesData,
 } from '@/lib/google-sheets';
@@ -36,12 +37,20 @@ export async function GET(req: NextRequest) {
       return new Response('Nenhuma venda encontrada no período selecionado', { status: 400 });
     }
 
-    const metrics = calculateMetrics(sales);
+    const closedSales = filterSalesByStatus(sales, 'fechada');
+    const openSalesList = filterSalesByStatus(sales, 'aberta');
+    const confirmedSales = closedSales.length > 0 ? closedSales : sales;
+    const openSalesData = {
+      revenue: openSalesList.reduce((sum, s) => sum + s.value, 0),
+      count: openSalesList.length,
+    };
+
+    const metrics = calculateMetrics(confirmedSales, openSalesData);
     const avgAdvanceDays = Number(
-      (sales.reduce((sum, s) => sum + s.advanceDays, 0) / sales.length).toFixed(1)
+      (confirmedSales.reduce((sum, s) => sum + s.advanceDays, 0) / confirmedSales.length).toFixed(1)
     );
-    const shortNotice = sales.filter((s) => s.advanceDays >= 0 && s.advanceDays <= 7).length;
-    const longAdvance = sales.filter((s) => s.advanceDays > 30).length;
+    const shortNotice = confirmedSales.filter((s) => s.advanceDays >= 0 && s.advanceDays <= 7).length;
+    const longAdvance = confirmedSales.filter((s) => s.advanceDays > 30).length;
 
     const prompt = buildInsightsPrompt({
       ...metrics,

@@ -120,7 +120,7 @@ export default async function SellersPage({ searchParams }: SellersPageProps) {
             <table className="w-full">
               <thead className="border-b border-cyan-400/15 bg-slate-950/25">
                 <tr>
-                  {['Nome do Vendedor', 'Total de Vendas', 'Receita Total', 'Receitas', 'Ticket Médio', 'Última Venda'].map((heading) => (
+                  {['Nome do Vendedor', 'Vendas Fechadas', 'Faturamento Fechado', 'Em Aberto', 'Ticket Médio', 'Última Venda'].map((heading) => (
                     <th key={heading} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-cyan-100/60">
                       {heading}
                     </th>
@@ -133,7 +133,7 @@ export default async function SellersPage({ searchParams }: SellersPageProps) {
                     <td className="px-6 py-4 text-sm text-cyan-50">{seller.name}</td>
                     <td className="px-6 py-4 text-sm text-cyan-50">{seller.totalSales}</td>
                     <td className="px-6 py-4 text-sm text-cyan-50">{formatCurrency(seller.totalRevenue)}</td>
-                    <td className="px-6 py-4 text-sm text-cyan-50">{formatCurrency(seller.commission)}</td>
+                    <td className="px-6 py-4 text-sm text-amber-300">{seller.openSales > 0 ? formatCurrency(seller.openRevenue) : '—'}</td>
                     <td className="px-6 py-4 text-sm text-cyan-50">{formatCurrency(seller.avgTicket)}</td>
                     <td className="px-6 py-4 text-sm text-cyan-50">{formatDate(seller.lastSaleDate)}</td>
                   </tr>

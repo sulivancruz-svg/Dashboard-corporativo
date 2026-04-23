@@ -1,10 +1,12 @@
-import { filterSalesByDateRange, getGoogleSheetsData, parseSalesData } from '@/lib/google-sheets';
+import { filterSalesByDateRange, filterSalesByStatus, getGoogleSheetsData, parseSalesData } from '@/lib/google-sheets';
 
 export interface SellerRow {
   id: string;
   name: string;
   totalSales: number;
   totalRevenue: number;
+  openRevenue: number;
+  openSales: number;
   commission: number;
   avgTicket: number;
   status: string;
@@ -22,7 +24,21 @@ export async function getSellersData(startDate?: string | null, endDate?: string
   }
 
   const { headers, data } = await getGoogleSheetsData(spreadsheetId, sheetGid, apiKey);
-  const sales = filterSalesByDateRange(parseSalesData(data, headers), startDate, endDate);
+  const allSales = filterSalesByDateRange(parseSalesData(data, headers), startDate, endDate);
+
+  const closedSales = filterSalesByStatus(allSales, 'fechada');
+  const openSalesList = filterSalesByStatus(allSales, 'aberta');
+
+  // Use closed sales if available, otherwise fall back to all
+  const sales = closedSales.length > 0 ? closedSales : allSales;
+
+  // Build open revenue map
+  const openMap = openSalesList.reduce((acc: Record<string, { revenue: number; count: number }>, sale) => {
+    if (!acc[sale.seller]) acc[sale.seller] = { revenue: 0, count: 0 };
+    acc[sale.seller].revenue += sale.value;
+    acc[sale.seller].count++;
+    return acc;
+  }, {});
 
   const sellerMap = sales.reduce((acc: Record<string, any>, sale) => {
     if (!acc[sale.seller]) {
@@ -53,6 +69,8 @@ export async function getSellersData(startDate?: string | null, endDate?: string
       name: seller.name,
       totalSales: seller.totalSales,
       totalRevenue: Number(seller.totalRevenue.toFixed(2)),
+      openRevenue: Number((openMap[seller.name]?.revenue ?? 0).toFixed(2)),
+      openSales: openMap[seller.name]?.count ?? 0,
       commission: 0,
       avgTicket: seller.salesCount > 0 ? Number((seller.totalRevenue / seller.salesCount).toFixed(2)) : 0,
       status: 'ACTIVE',

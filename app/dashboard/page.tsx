@@ -79,13 +79,13 @@ export default function OverviewPage() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
             <KpiCard
-              title="Total de Vendas"
+              title="Vendas Fechadas"
               value={data.totalSales}
-              subtitle="Transações no período"
+              subtitle="Faturamento confirmado"
               trend={{ value: Math.abs(data.growthRate), direction: data.growthRate >= 0 ? 'up' : 'down' }}
             />
-            <KpiCard title="Receita Total" value={formatCurrency(data.totalRevenue)} subtitle={`Média: ${formatCurrency(data.avgTicket)}`} />
-            <KpiCard title="Clientes Únicos" value={data.totalClients} subtitle={`${data.totalProducts} produtos`} />
+            <KpiCard title="Faturamento Fechado" value={formatCurrency(data.totalRevenue)} subtitle={`Ticket médio: ${formatCurrency(data.avgTicket)}`} />
+            <KpiCard title="Em Aberto (Pipeline)" value={formatCurrency(data.openRevenue)} subtitle={`${data.openSales} vendas em aberto`} />
             <KpiCard title="Melhor Vendedor" value={data.topSellerName} subtitle={formatCurrency(data.topSellerAmount)} />
             <KpiCard title="Melhor Cliente" value={data.topClientName} subtitle={formatCurrency(data.topClientAmount)} />
             <KpiCard title="Melhor Produto" value={data.topProductName} subtitle={formatCurrency(data.topProductAmount)} />
