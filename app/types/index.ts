@@ -50,6 +50,8 @@ export interface OverviewData {
   topClientAmount: number;
   topProductName: string;
   topProductAmount: number;
+  nationalSales?: number;
+  internationalSales?: number;
   topSellers?: Array<{ name: string; revenue: number; sales: number }>;
   topClients?: Array<{ name: string; revenue: number; sales: number }>;
   topProducts?: Array<{ name: string; revenue: number; sales: number }>;

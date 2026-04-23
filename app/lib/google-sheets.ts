@@ -30,6 +30,8 @@ export interface OverviewData {
   topClientAmount: number;
   topProductName: string;
   topProductAmount: number;
+  nationalSales: number;
+  internationalSales: number;
   topSellers: Array<{ name: string; revenue: number; sales: number }>;
   topClients: Array<{ name: string; revenue: number; sales: number }>;
   topProducts: Array<{ name: string; revenue: number; sales: number }>;
@@ -375,6 +377,8 @@ export function calculateMetrics(sales: SalesRecord[], openSalesData?: { revenue
   const uniqueClients = new Set(sales.map((sale) => sale.client)).size;
   const uniqueProducts = new Set(sales.map((sale) => sale.product)).size;
   const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+  const nationalSales = sales.filter((s) => s.destination.toLowerCase().includes('nacional')).length;
+  const internationalSales = sales.filter((s) => s.destination.toLowerCase().includes('inter')).length;
 
   const sellerSales = sales.reduce<Record<string, number>>((acc, sale) => {
     acc[sale.seller] = (acc[sale.seller] || 0) + sale.value;
@@ -440,6 +444,8 @@ export function calculateMetrics(sales: SalesRecord[], openSalesData?: { revenue
     topClientAmount: topClientEntry ? Number(topClientEntry[1].toFixed(2)) : 0,
     topProductName: topProductEntry ? topProductEntry[0] : 'N/A',
     topProductAmount: topProductEntry ? Number(topProductEntry[1].toFixed(2)) : 0,
+    nationalSales,
+    internationalSales,
     topSellers: toTopList(sellerSales, sellerCounts),
     topClients: toTopList(clientSales, clientCounts),
     topProducts: toTopList(productSales, productCounts),

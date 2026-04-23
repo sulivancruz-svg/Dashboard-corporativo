@@ -77,7 +77,7 @@ export default function OverviewPage() {
 
       {data && !loading && !error && (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
             <KpiCard
               title="Vendas"
               value={data.totalSales}
@@ -88,6 +88,20 @@ export default function OverviewPage() {
             <KpiCard title="Melhor Vendedor" value={data.topSellerName} subtitle={formatCurrency(data.topSellerAmount)} />
             <KpiCard title="Melhor Cliente" value={data.topClientName} subtitle={formatCurrency(data.topClientAmount)} />
             <KpiCard title="Melhor Produto" value={data.topProductName} subtitle={formatCurrency(data.topProductAmount)} />
+            <div className="rounded border border-cyan-400/15 bg-[#0B2440] p-5 shadow-[0_14px_35px_rgba(0,0,0,0.24)]">
+              <p className="text-sm text-cyan-100/60">Destino</p>
+              <div className="mt-3 flex items-end justify-between gap-2">
+                <div>
+                  <p className="text-2xl font-bold text-white">{data.nationalSales ?? 0}</p>
+                  <p className="mt-0.5 text-xs text-cyan-100/50">Nacional</p>
+                </div>
+                <div className="h-8 w-px bg-cyan-400/20" />
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-sky-300">{data.internationalSales ?? 0}</p>
+                  <p className="mt-0.5 text-xs text-cyan-100/50">Internacional</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
