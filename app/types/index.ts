@@ -137,3 +137,26 @@ export interface ComparisonData {
 export interface RawSaleData extends CorporateSale {
   sellerName: string;
 }
+
+export interface SellerClientBreakdownItem {
+  clientName: string;
+  totalSales: number;
+  totalRevenue: number;
+  avgTicket: number;
+  lastSaleDate: string;
+  productsCount: number;
+  revenueShare: number;
+}
+
+export interface SellerClientBreakdown {
+  sellerId: string;
+  sellerName: string;
+  totalSales: number;
+  totalRevenue: number;
+  avgTicket: number;
+  uniqueClients: number;
+  lastSaleDate: string;
+  topClientName: string;
+  topClientRevenue: number;
+  clients: SellerClientBreakdownItem[];
+}

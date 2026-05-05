@@ -24,15 +24,16 @@ export function Navigation() {
   }, []);
 
   const navItems = [
-    { href: '/dashboard', label: 'Visão Geral' },
+    { href: '/dashboard', label: 'Visao Geral' },
     { href: '/dashboard/sellers', label: 'Vendedores' },
+    { href: '/dashboard/seller-clients', label: 'Vendedor x Cliente' },
     { href: '/dashboard/clients', label: 'Clientes' },
     { href: '/dashboard/products', label: 'Produtos' },
     { href: '/dashboard/behavioral', label: 'Comportamento' },
-    { href: '/dashboard/comparison', label: 'Comparação' },
+    { href: '/dashboard/comparison', label: 'Comparacao' },
     { href: '/dashboard/raw', label: 'Dados Brutos' },
-    { href: '/dashboard/insights', label: 'Inteligência' },
-    { href: '/dashboard/settings', label: 'Configurações' },
+    { href: '/dashboard/insights', label: 'Inteligencia' },
+    { href: '/dashboard/settings', label: 'Configuracoes' },
   ];
 
   const handleLogout = async () => {
