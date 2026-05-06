@@ -7,12 +7,48 @@ import {
   getGoogleSheetsData,
   parseSalesData,
 } from '@/lib/google-sheets';
-import { buildInsightsPrompt } from '@/lib/insights-prompt';
+import { buildInitialInsightsPrompt, buildInsightsContext } from '@/lib/insights-prompt';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
+type ChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 export async function GET(req: NextRequest) {
+  return streamInsights(req, {
+    message: buildInitialInsightsPrompt(),
+    history: [],
+  });
+}
+
+export async function POST(req: NextRequest) {
+  const body = (await req.json().catch(() => ({}))) as {
+    startDate?: string;
+    endDate?: string;
+    message?: string;
+    history?: ChatMessage[];
+  };
+
+  return streamInsights(req, {
+    startDateOverride: body.startDate,
+    endDateOverride: body.endDate,
+    message: body.message || buildInitialInsightsPrompt(),
+    history: Array.isArray(body.history) ? body.history : [],
+  });
+}
+
+async function streamInsights(
+  req: NextRequest,
+  options: {
+    message: string;
+    history: ChatMessage[];
+    startDateOverride?: string;
+    endDateOverride?: string;
+  }
+) {
   try {
     const spreadsheetId = process.env.GOOGLE_SHEETS_CORPORATE_ID;
     const sheetGid = process.env.GOOGLE_SHEETS_CORPORATE_GID;
@@ -27,34 +63,34 @@ export async function GET(req: NextRequest) {
       return new Response('ANTHROPIC_API_KEY not configured', { status: 400 });
     }
 
-    const startDate = req.nextUrl.searchParams.get('startDate');
-    const endDate = req.nextUrl.searchParams.get('endDate');
+    const startDate = options.startDateOverride ?? req.nextUrl.searchParams.get('startDate');
+    const endDate = options.endDateOverride ?? req.nextUrl.searchParams.get('endDate');
 
     const { headers, data } = await getGoogleSheetsData(spreadsheetId, sheetGid, sheetsApiKey);
     const sales = filterSalesByDateRange(parseSalesData(data, headers), startDate, endDate);
 
     if (sales.length === 0) {
-      return new Response('Nenhuma venda encontrada no período selecionado', { status: 400 });
+      return new Response('Nenhuma venda encontrada no periodo selecionado', { status: 400 });
     }
 
     const closedSales = filterSalesByStatus(sales, 'fechada');
     const openSalesList = filterSalesByStatus(sales, 'aberta');
     const confirmedSales = closedSales.length > 0 ? closedSales : sales;
     const openSalesData = {
-      revenue: openSalesList.reduce((sum, s) => sum + s.value, 0),
+      revenue: openSalesList.reduce((sum, sale) => sum + sale.value, 0),
       count: openSalesList.length,
     };
 
     const metrics = calculateMetrics(confirmedSales, openSalesData);
     const avgAdvanceDays = Number(
-      (confirmedSales.reduce((sum, s) => sum + s.advanceDays, 0) / confirmedSales.length).toFixed(1)
+      (confirmedSales.reduce((sum, sale) => sum + sale.advanceDays, 0) / confirmedSales.length).toFixed(1)
     );
-    const shortNotice = confirmedSales.filter((s) => s.advanceDays >= 0 && s.advanceDays <= 7).length;
-    const longAdvance = confirmedSales.filter((s) => s.advanceDays > 30).length;
+    const shortNotice = confirmedSales.filter((sale) => sale.advanceDays >= 0 && sale.advanceDays <= 7).length;
+    const longAdvance = confirmedSales.filter((sale) => sale.advanceDays > 30).length;
 
-    const prompt = buildInsightsPrompt({
+    const systemPrompt = buildInsightsContext({
       ...metrics,
-      startDate: startDate ?? 'início dos registros',
+      startDate: startDate ?? 'inicio dos registros',
       endDate: endDate ?? 'hoje',
       avgAdvanceDays,
       shortNotice,
@@ -62,28 +98,25 @@ export async function GET(req: NextRequest) {
     });
 
     const client = new Anthropic({ apiKey: anthropicApiKey });
-
     const anthropicStream = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
+      system: systemPrompt,
       stream: true,
-      messages: [{ role: 'user', content: prompt }],
+      messages: toAnthropicMessages(options.history, options.message),
     });
 
     const readable = new ReadableStream({
       async start(controller) {
         try {
           for await (const event of anthropicStream) {
-            if (
-              event.type === 'content_block_delta' &&
-              event.delta.type === 'text_delta'
-            ) {
+            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
               controller.enqueue(new TextEncoder().encode(event.delta.text));
             }
           }
           controller.close();
-        } catch (err) {
-          controller.error(err);
+        } catch (error) {
+          controller.error(error);
         }
       },
     });
@@ -95,8 +128,26 @@ export async function GET(req: NextRequest) {
         'Cache-Control': 'no-cache',
       },
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return new Response(`Erro ao gerar análise: ${message}`, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(`Erro ao gerar analise: ${message}`, { status: 500 });
   }
+}
+
+function toAnthropicMessages(history: ChatMessage[], message: string) {
+  const sanitizedHistory = history
+    .filter((item) => item && (item.role === 'user' || item.role === 'assistant') && item.content?.trim())
+    .slice(-10)
+    .map((item) => ({
+      role: item.role,
+      content: item.content,
+    }));
+
+  return [
+    ...sanitizedHistory,
+    {
+      role: 'user' as const,
+      content: message,
+    },
+  ];
 }
